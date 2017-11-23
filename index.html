@@ -4,11 +4,33 @@
   <meta charset="utf-8">
   <title>街区地图</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css"></style>
+  <link rel="stylesheet" href=""></style>
+  <style>
+    #map { height: 100% }
+    html,body{height: 100%; margin: 0; padding: 0}
+
+  </style>
 </head>
 
 <body>
+  <div id = "map">
+  </div>
 
 
-
+  <script src="node_modules/jquery/dist/jquery.min.js"></script>
+  <script src="node_modules/knockout/build/output/knockout-latest.js"></script>
+  <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script>
+    var map;
+    function initMap(){
+      map = new google.maps.Map(document.getElementById("map"),{     //注：用$("#map")会出错
+        center:{lat: 30.228, lng: 120.134},
+        zoom:10
+      });
+    }
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&callback=initMap"
+    async defer></script>
 </body>
 </html>
