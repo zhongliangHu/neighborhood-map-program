@@ -33,7 +33,8 @@
   <script>
     var map,
         markers=[];
-
+        labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        labelIndex = 0;
     function initMap(){
       centerlatLng = {lat: 30.228, lng: 120.134};
       map = new google.maps.Map(document.getElementById("map"),{     //注：用$("#map")会出错
@@ -45,7 +46,7 @@
       google.maps.event.addListener(map,"click",function(event){
         addMarkers(event.latLng);
 
-        alert("latitude:"+event.latLng.lat()+" "+"lngitude:"+event.latLng.lng());
+        console.log(marker.label+":"+"latitude:"+event.latLng.lat()+" "+"lngitude:"+event.latLng.lng());
       });
 
       //addMarkers()  鼠标点击后地图上添加标记 并将marker添加到markers[]数组中
