@@ -8,30 +8,94 @@
   <link rel="stylesheet" href=""></style>
   <style>
     #map { height: 100% }
-    html,body{height: 100%; margin: 0; padding: 0}
-
+    html,body{height: 100%; margin: 0; padding: 0; position:relative;}
+    #panel{  width: 400px; background: #fff;  border:6px solid #aaa; border-radius:100px; line-height: 30px; padding: 5px; font-family: 'Roboto','sans-serif'; text-align: center; position: fixed; margin: auto; top: 10px; bottom: auto; left: 0; right: 0;  }
+    /*#panel 固定在屏幕上部分 水平居中*/
+    p{ color: green; font-size: 17px; position: absolute; margin: auto; top:auto; bottom:30px ; left: 10px; right: auto;;  }
+    /* <p>固定在屏幕左下部分 */
   </style>
 </head>
 
 <body>
-  <div id = "map">
-  </div>
+  <div id = "map"></div>
+  <div id = panel>
+    <input type="button" value="hidden markers" id="hidden">
+    <input type="button" value="show markers" id="show">
+    <input type="button" value="delete markers" id="delete">
+  </div>s
+  <p><strong>单击地图添加标记，点击按钮删除、隐藏或显示标记</strong></p>
+
 
 
   <script src="node_modules/jquery/dist/jquery.min.js"></script>
   <script src="node_modules/knockout/build/output/knockout-latest.js"></script>
   <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
   <script>
-    var map;
+    var map,
+        markers=[];
+
     function initMap(){
+      centerlatLng = {lat: 30.228, lng: 120.134};
       map = new google.maps.Map(document.getElementById("map"),{     //注：用$("#map")会出错
-        center:{lat: 30.228, lng: 120.134},
-        zoom:10
+        center: centerlatLng,
+        zoom:13
       });
+      addMarkers(centerlatLng);
+      //点击地图 设置标记 获取点击位置的经纬度
+      google.maps.event.addListener(map,"click",function(event){
+        addMarkers(event.latLng);
+
+        alert("latitude:"+event.latLng.lat()+" "+"lngitude:"+event.latLng.lng());
+      });
+
+      //addMarkers()  鼠标点击后地图上添加标记 并将marker添加到markers[]数组中
+      function addMarkers(position){
+        marker = new google.maps.Marker({
+          map:map,
+          position:position,
+          label: labels[labelIndex++ % labels.length],   //？是否 相当于 labelIndex=(labelIndex+1)%labels.length
+          animation: google.maps.Animation.DROP
+        });
+        markers.push(marker);   //添加marker到数组markers[];
+      }
+
+      //setMarkers()遍历markers[]数组进行设置maker的map属性达到
+      function setMarkers(map){
+        markers.forEach(function(marker,index,array){
+          marker.setMap(map);
+        });
+      }
+
+      //showMarkers() 显示标记markers
+      function showMarkers(){
+        setMarkers(map);
+      }
+
+      //hiddenMarkers()隐藏标记
+      function hiddenMarkers(){
+        setMarkers(null);
+      }
+      //deleteMarkers() 删除标记
+      function deleteMarkers(){
+        hiddenMarkers();
+        markers = [];
+      }
+
+      $("#show").on("click",function(){
+        showMarkers();
+      });
+      $("#hidden").on("click",function(){
+        hiddenMarkers();
+      });
+      $("#delete").on("click",function(){
+        deleteMarkers();
+      });
+
     }
+
   </script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&callback=initMap"
     async defer></script>
-  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places" async defer></script>
+  <!-- <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places" async defer></script> -->
 </body>
 </html>
