@@ -32,24 +32,55 @@
   <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
   <script>
     var map,
-        markers=[];
-        labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        labelIndex = 0;
+        markers=[],
+        labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        labelIndex = 0,
+        infowindow,
+        service,
+        request;
     function initMap(){
-      centerlatLng = {lat: 30.228, lng: 120.134};
+      centerlatLng = {lat: 30.27409727939915, lng: 120.15506744384766};
       map = new google.maps.Map(document.getElementById("map"),{     //注：用$("#map")会出错
         center: centerlatLng,
-        zoom:13
+        zoom:15
       });
-      addMarkers(centerlatLng);
-      //点击地图 设置标记 获取点击位置的经纬度
-      google.maps.event.addListener(map,"click",function(event){
-        addMarkers(event.latLng);
+      //设置信息窗口
+      infowindow = new google.maps.InfoWindow();
+      //设置地点服务service及service.nearbySearch(request,callback)
+      service = new google.maps.places.PlacesService(map);
+      service.textSearch({
+        location:centerlatLng,
+        radius: 500,
+        query: "hotel",
+        type:["lodging"]
+      },callback);
 
+      //nearbySearch({},callback)中的callback()返回函数的设置,利用forEach()遍历results[]创建marker标记
+      function callback(results,status){
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          results.forEach(function(result,index,array){
+                  createMarker(result);
+          });
+        }
+      }
+      //设置callback()中的createMarker()--闭包
+      function createMarker(result){
+        var placeLoc = result.geometry.location; //获取返回结果result中的地理位置经纬度
+        addMarkers(placeLoc);
+        google.maps.event.addListener(marker,"click",function(event){
+          infowindow.setContent(result.name);
+          infowindow.open(map,this);     // this为当前点击的marker
+        });
+      }
+
+      //点击地图 创造标记create markers
+      google.maps.event.addListener(map,"click",function(event){
+        addMarkers(event.latLng);        //event.latLng获取点击位置的经纬度
         console.log(marker.label+":"+"latitude:"+event.latLng.lat()+" "+"lngitude:"+event.latLng.lng());
       });
 
-      //addMarkers()  鼠标点击后地图上添加标记 并将marker添加到markers[]数组中
+
+      //addMarkers() 添加 传递了position的标记,并将marker添加到markers[]数组中
       function addMarkers(position){
         marker = new google.maps.Marker({
           map:map,
@@ -60,7 +91,7 @@
         markers.push(marker);   //添加marker到数组markers[];
       }
 
-      //setMarkers()遍历markers[]数组进行设置maker的map属性达到
+      //setMarkers()遍历markers[]数组 对每个maker重新设置map属性
       function setMarkers(map){
         markers.forEach(function(marker,index,array){
           marker.setMap(map);
@@ -95,7 +126,7 @@
     }
 
   </script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&callback=initMap"
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places&callback=initMap"
     async defer></script>
   <!-- <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places" async defer></script> -->
 </body>
