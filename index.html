@@ -33,6 +33,7 @@
   <script>
     var map,
         markers=[],
+        marker,
         labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
         labelIndex = 0,
         infowindow,
@@ -59,32 +60,55 @@
       function callback(results,status){
         if (status === google.maps.places.PlacesServiceStatus.OK) {
           results.forEach(function(result,index,array){
-                  createMarker(result);
+                  createMarker(result);       //for循环内--闭包closures
           });
         }
       }
-      //设置callback()中的createMarker()--闭包
+      //设置callback()中的createMarker() --创建marker同时设置marker点击事件 显示信息窗口
       function createMarker(result){
-        var placeLoc = result.geometry.location; //获取返回结果result中的地理位置经纬度
-        addMarkers(placeLoc);
-        google.maps.event.addListener(marker,"click",function(event){
-          infowindow.setContent(result.name);
+        var placeLoc = result.geometry.location, //获取返回结果result中的地理位置经纬度和id地址
+            placeId = result.place_id,
+            placeName = result.name;
+
+        // var icon = result.icon;
+        // if(icon){
+        //   addMarkers(placeLoc,placeId,placeName,icon);  //添加有图像显示的marker标记
+        // }
+
+        addMarkers(placeLoc,placeId,placeName);  //添加marker标记
+
+        var content = "<div class='placeContent'><strong>"+placeName+"</strong><br>"+
+                       "<strong>Place ID：</strong>"+placeId+"<br>"+
+                       "<strong>Place Formatted Address：</strong>"+result.formatted_address+"<br>"+
+                       // "<strong>Place html.attributions：</strong>"+result.html.attributions+"<br>"+
+                       "<strong>Place opening_hours：</strong>"+result.opening_hours+"<br>"+
+                       "<strong>Place rating：</strong>"+result.rating+"<br>"+
+                       "<strong>Place vicinity：</strong>"+result.vicinity+"<br>"+
+                       "<strong>Place icon：</strong>"+result.icon+"<br>"+
+                       "</div>"
+        google.maps.event.addListener(marker,"click",function(event){    //点击marker显示信息
+          infowindow.setContent(content);
           infowindow.open(map,this);     // this为当前点击的marker
         });
       }
 
       //点击地图 创造标记create markers
       google.maps.event.addListener(map,"click",function(event){
-        addMarkers(event.latLng);        //event.latLng获取点击位置的经纬度
-        console.log(marker.label+":"+"latitude:"+event.latLng.lat()+" "+"lngitude:"+event.latLng.lng());
+        //addMarkers(event.latLng,event.placeId);   //如何获取点击地点的ID？？ 不是任何地点都有placeId吧？     //event.latLng获取点击位置的经纬度
+        console.log("bounds:"+map.getBounds()+marker.label+":"+"latitude:"+event.latLng.lat()+" "+"lngitude:"+event.latLng.lng());
       });
 
 
       //addMarkers() 添加 传递了position的标记,并将marker添加到markers[]数组中
-      function addMarkers(position){
-        marker = new google.maps.Marker({
+      function addMarkers(position,id,name){
+        marker = new google.maps.Marker({       //添加var marker=后 变局部变量 私有化(外部函数无法访问)，可能会使marker的addListener()找不到marker
           map:map,
-          position:position,
+          title:name,
+          place:{
+            location:position,
+            placeId:id
+          },
+          // icon:icon,          //添加标记图像
           label: labels[labelIndex++ % labels.length],   //？是否 相当于 labelIndex=(labelIndex+1)%labels.length
           animation: google.maps.Animation.DROP
         });
@@ -126,7 +150,7 @@
     }
 
   </script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places&callback=initMap"
+  <script src="http://maps.google.cn/maps/api/js?region=cn&language=zh-CN&key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places&callback=initMap"
     async defer></script>
   <!-- <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places" async defer></script> -->
 </body>
