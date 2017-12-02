@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>knockout-街区地图</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css"></style>
+  <link rel="stylesheet" href=""></style>
+  <style>
+    #map { height: 100% }
+    html,body{height: 100%; margin: 0; padding: 0;}
+    #panel{  width: 400px; background: #fff;  border:6px solid #aaa; border-radius:100px; line-height: 30px; padding: 5px; font-family: 'Roboto','sans-serif'; text-align: center; position: fixed; margin: auto; top: 10px; bottom: auto; left: 0; right: 0;  }
+    /*#panel 固定在屏幕上部分 水平居中*/
+
+    p{ color: green; font-size: 17px; position: absolute; margin: auto; top:auto; bottom:30px ; left: 10px; right: auto; }
+    /* <p>固定在屏幕左下部分 */
+
+    #view{position: absolute; margin: auto; left: 20px; right:auto; top:55%; background: #f8f8f8;}
+
+  </style>
+</head>
+
+<body>
+  <div id = "map"></div>
+  <div id = panel>
+    <input type="button" value="hidden markers" id="hidden">
+    <input type="button" value="show markers" id="show">
+    <input type="button" value="delete markers" id="delete">
+  </div>
+  <p><strong>单击地图添加标记，点击按钮删除、隐藏或显示标记</strong></p>
+
+  <div id = "view">
+  <h2>Your seat reservations</h2>
+  <table>
+      <thead><tr>
+          <th>Passenger name</th><th>Meal</th><th>Surcharge</th><th></th>
+      </tr></thead>
+      <!-- Todo: Generate table body -->
+      <tbody data-bind = "foreach:seats">
+        <tr>
+        <td><input data-bind="value:name" /></td>
+        <td data-bind="text:meal().mealName"></td>
+        <td data-bind="text:meal().price"></td>
+        </tr>
+    </tbody>
+    <!-- Todo: Generate another table body -->
+      <tbody data-bind = "foreach:seats">
+          <tr>
+          <td><input data-bind="value:name" /></td>
+          <!-- <td><select data-bind="options:$parent.availableMeals, value:mealName,optionsText:'mealName' "> </select></td> -->
+          <td><select data-bind="with:$parent.availableMeals">
+            <option data-bind="value:mealName,optionsText:'mealName'"></option>
+          </select></td>
+          <td data-bind="text:formattedPrice()"></td>
+          </tr>
+      </tbody>
+  </table>
+  <button data-bind="click:addNewseat">Reserve another seat</button>
+  </div>
+
+  <script src="node_modules/knockout/build/output/knockout-latest.js"></script>
+  <script>
+    // Class to represent a row in the seat reservations grid
+    function SeatReservation(name, initialMeal) {
+      var self = this;
+      self.name = name;
+      self.meal = ko.observable(initialMeal);
+      //返回price --将initialMeal对应的价格price设置在SeatReservation构造函数中, 使得其能在seats[]数组内在每组中都能到访问  --闭包
+      self.formattedPrice =function(){
+        var price = self.meal().price;
+        return price ? "$"+price.toFixed(2) : "None";
+      }
+      self.formattedMealName = self.meal().mealName;
+    }
+
+    // Overall viewmodel for this screen, along with initial state
+    function ReservationsViewModel() {
+      var self = this;
+    // Non-editable catalog data - would come from the server
+      self.availableMeals = [
+          { mealName: "Standard (sandwich)", price:"$"+0 },
+          { mealName: "Premium (lobster)", price: "$"+34.95 },
+          { mealName: "Ultimate (whole zebra)", price: "$"+290 }
+        ];
+    // Editable data
+      self.seats = ko.observableArray([
+          new SeatReservation("Steve", self.availableMeals[0]),
+          new SeatReservation("Bert", self.availableMeals[0])
+        ]);
+      self.addNewseat = function (){
+          self.seats.push(new SeatReservation("",self.availableMeals[1]));
+        }
+    }
+      ko.applyBindings(new ReservationsViewModel());
+  </script>
+  <script src="node_modules/jquery/dist/jquery.min.js"></script>
+
+  <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script>
+    var map,
+        markers=[],
+        marker,
+        labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        labelIndex = 0,
+        infowindow,
+        service,
+        request;
+    function initMap(){
+      centerlatLng = {lat: 30.27409727939915, lng: 120.15506744384766};
+      map = new google.maps.Map(document.getElementById("map"),{     //注：用$("#map")会出错
+        center: centerlatLng,
+        zoom:15
+      });
+      //设置信息窗口
+      infowindow = new google.maps.InfoWindow();
+      //设置地点服务service及service.nearbySearch(request,callback)
+      service = new google.maps.places.PlacesService(map);
+      service.textSearch({
+        location:centerlatLng,
+        radius: 500,
+        query: "hotel",
+        type:["lodging"]
+      },callback);
+
+      //nearbySearch({},callback)中的callback()返回函数的设置,利用forEach()遍历results[]创建marker标记
+      function callback(results,status){
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          results.forEach(function(result,index,array){
+                  createMarker(result);       //for循环内--闭包closures
+          });
+        }
+      }
+      //设置callback()中的createMarker() --创建marker同时设置marker点击事件 显示信息窗口
+      function createMarker(result){
+        var placeLoc = result.geometry.location, //获取返回结果result中的地理位置经纬度和id地址
+            placeId = result.place_id,
+            placeName = result.name;
+
+        // var icon = result.icon;
+        // if(icon){
+        //   addMarkers(placeLoc,placeId,placeName,icon);  //添加有图像显示的marker标记
+        // }
+
+        addMarkers(placeLoc,placeId,placeName);  //添加marker标记
+
+        var content = "<div class='placeContent'><strong>"+placeName+"</strong><br>"+
+                       "<strong>Place ID：</strong>"+placeId+"<br>"+
+                       "<strong>Place Formatted Address：</strong>"+result.formatted_address+"<br>"+
+                       // "<strong>Place html.attributions：</strong>"+result.html.attributions+"<br>"+
+                       "<strong>Place opening_hours：</strong>"+result.opening_hours+"<br>"+
+                       "<strong>Place rating：</strong>"+result.rating+"<br>"+
+                       "<strong>Place vicinity：</strong>"+result.vicinity+"<br>"+
+                       "<strong>Place icon：</strong>"+result.icon+"<br>"+
+                       "</div>"
+        google.maps.event.addListener(marker,"click",function(event){    //点击marker显示信息
+          infowindow.setContent(content);
+          infowindow.open(map,this);     // this为当前点击的marker
+        });
+      }
+
+      //点击地图 创造标记create markers
+      google.maps.event.addListener(map,"click",function(event){
+        //addMarkers(event.latLng,event.placeId);   //如何获取点击地点的ID？？ 不是任何地点都有placeId吧？     //event.latLng获取点击位置的经纬度
+        console.log("bounds:"+map.getBounds()+marker.label+":"+"latitude:"+event.latLng.lat()+" "+"lngitude:"+event.latLng.lng());
+      });
+
+
+      //addMarkers() 添加 传递了position的标记,并将marker添加到markers[]数组中
+      function addMarkers(position,id,name){
+        marker = new google.maps.Marker({       //添加var marker=后 变局部变量 私有化(外部函数无法访问)，可能会使marker的addListener()找不到marker
+          map:map,
+          title:name,
+          place:{
+            location:position,
+            placeId:id
+          },
+          // icon:icon,          //添加标记图像
+          label: labels[labelIndex++ % labels.length],   //？是否 相当于 labelIndex=(labelIndex+1)%labels.length
+          animation: google.maps.Animation.DROP
+        });
+        markers.push(marker);   //添加marker到数组markers[];
+      }
+
+      //setMarkers()遍历markers[]数组 对每个maker重新设置map属性
+      function setMarkers(map){
+        markers.forEach(function(marker,index,array){
+          marker.setMap(map);
+        });
+      }
+
+      //showMarkers() 显示标记markers
+      function showMarkers(){
+        setMarkers(map);
+      }
+
+      //hiddenMarkers()隐藏标记
+      function hiddenMarkers(){
+        setMarkers(null);
+      }
+      //deleteMarkers() 删除标记
+      function deleteMarkers(){
+        hiddenMarkers();
+        markers = [];
+      }
+
+      $("#show").on("click",function(){
+        showMarkers();
+      });
+      $("#hidden").on("click",function(){
+        hiddenMarkers();
+      });
+      $("#delete").on("click",function(){
+        deleteMarkers();
+      });
+
+    }
+
+  </script>
+  <script src="http://maps.google.cn/maps/api/js?region=cn&language=zh-CN&key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places&callback=initMap"
+    async defer></script>
+  <!-- <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places" async defer></script> -->
+</body>
+</html>
