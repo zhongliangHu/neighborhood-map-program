@@ -11,18 +11,47 @@
     html,body{height: 100%; margin: 0; padding: 0; position:relative;}
     #panel{  width: 400px; background: #fff;  border:6px solid #aaa; border-radius:100px; line-height: 30px; padding: 5px; font-family: 'Roboto','sans-serif'; text-align: center; position: fixed; margin: auto; top: 10px; bottom: auto; left: 0; right: 0;  }
     /*#panel 固定在屏幕上部分 水平居中*/
+
     p{ color: green; font-size: 17px; position: absolute; margin: auto; top:auto; bottom:30px ; left: 10px; right: auto;;  }
     /* <p>固定在屏幕左下部分 */
+
+    #view{position: absolute; margin: auto; left: 20px; right:auto; top:55%; background: #f8f8f8;}
   </style>
 </head>
 
 <body>
   <div id = "map"></div>
   <div id = panel>
+    <input type="text" id = "autocomplete" placeholder="Enter a scenic spot" />
     <input type="button" value="hidden markers" id="hidden">
     <input type="button" value="show markers" id="show">
     <input type="button" value="delete markers" id="delete">
-  </div>s
+  </div>
+
+  <div id = "view">
+  <h2>Your seat reservations (<span data-bind = "text:seats().length"></span>)</h2>
+  <table>
+      <thead><tr>
+          <th>Passenger name</th><th>Meal</th><th>Surcharge</th><th></th>
+      </tr></thead>
+    <!-- Todo: Generate table body -->
+      <tbody data-bind = "foreach:seats">
+          <tr>
+          <td><input data-bind="value:name" /></td>
+          <!-- <td><select data-bind="options:$root.availableMeals, optionsText:function(seatReservation){return 'mealName:'+seatReservation.mealName;}, value:meal"> </select></td> -->
+            <td><select data-bind="options:$root.availableMeals, optionsText:$root.computedMealName, value:meal"> </select></td>
+          <!--value:meal 依据options不同选择 可动态改变meal(),以此可获取对应相应价格 -->
+          <td data-bind="text:formattedPrice()"></td>
+          <td ><a href="#" data-bind="click:$root.removeSeat ">Remove it</a></td>
+          </tr>
+      </tbody>
+    </table>
+    <button data-bind="click:addNewseat, enable: seats().length < 6">Reserve another seat</button>
+    <h3 data-bind = "visible: totalSurcharge() > 0 ">
+      Total Surcharge：$<span data-bind = "text:totalSurcharge()"> </span>
+    </h3>
+    <!-- 为什么需要在函数后添加()？？？是不是因为text的原因??? 为什么optionsText不需要加()-->
+  </div>
   <p><strong>单击地图添加标记，点击按钮删除、隐藏或显示标记</strong></p>
 
 
@@ -37,6 +66,7 @@
         labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
         labelIndex = 0,
         infowindow,
+        autocomplete,
         service,
         request;
     function initMap(){
@@ -47,6 +77,11 @@
       });
       //设置信息窗口
       infowindow = new google.maps.InfoWindow();
+      //创建autocomplete(inputHTML,request)
+      autocomplete = new google.maps.places.Autocomplete(
+
+      );
+
       //设置地点服务service及service.nearbySearch(request,callback)
       service = new google.maps.places.PlacesService(map);
       service.textSearch({
@@ -77,6 +112,7 @@
 
         addMarkers(placeLoc,placeId,placeName);  //添加marker标记
 
+     //showInfowindow
         var content = "<div class='placeContent'><strong>"+placeName+"</strong><br>"+
                        "<strong>Place ID：</strong>"+placeId+"<br>"+
                        "<strong>Place Formatted Address：</strong>"+result.formatted_address+"<br>"+
