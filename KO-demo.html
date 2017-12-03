@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>knockout-街区地图</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css"></style>
+  <link rel="stylesheet" href=""></style>
+  <style>
+    #map { height: 100% }
+    html,body{height: 100%; margin: 0; padding: 0;}
+    #panel{  width: 400px; background: #fff;  border:6px solid #aaa; border-radius:100px; line-height: 30px; padding: 5px; font-family: 'Roboto','sans-serif'; text-align: center; position: fixed; margin: auto; top: 10px; bottom: auto; left: 0; right: 0;  }
+    /*#panel 固定在屏幕上部分 水平居中*/
+
+    #text{ color: green; font-size: 17px; position: absolute; margin: auto; top:auto; bottom:30px ; left: 10px; right: auto; }
+    /* <p>固定在屏幕左下部分 */
+
+    #view{position: absolute; margin: auto; left: 20px; right:auto; top:20%; background: #f8f8f8;}
+
+  </style>
+
+
+</head>
+
+<body>
+
+  <!-- <div id = "map"></div> -->
+  <div id = panel>
+    <input type="button" value="hidden markers" id="hidden">
+    <input type="button" value="show markers" id="show">
+    <input type="button" value="delete markers" id="delete">
+  </div>
+
+<!-- 第一部分 demo -->
+  <p>
+      Destination country:
+      <select data-bind="options: availableCountries,
+                         valueAllowUnset: true,
+                         optionsCaption:'select a scenic spot',
+                         value: selectedCountry" ></select>
+  </p>
+<!--  -->
+
+<!-- 第二部分demo -->
+<!--  <p>
+    Your country:
+    <select data-bind="options: availableCountries,
+                       optionsText: function(item){
+                         return  'countryName:'+ item.countryName;
+                       },
+                       valueAllowUnset:true,
+                       value:selectedCountry"></select>
+
+</p>  -->
+<!-- optionsCaption: 'Choose a country' value其实是select选项的value是将availableCountries[]中的某一项传入了， -->
+<!-- optionsValue: 'countryPopulation',??  optionsText中需传入item来传递availableCountries[]的每组内容 不能直接使用availableCountries   -->
+
+<!-- Appears when you select something -->
+<!-- <div data-bind="visible: selectedCountry">
+    You have chosen a country with population
+    <span data-bind="text: selectedCountry() ? selectedCountry().countryPopulation : 'unknown'"></span>.
+</div> -->
+
+
+  <script src="node_modules/knockout/build/output/knockout-latest.js"></script>
+  <script type="text/javascript">
+      var viewModel = {
+          // These are the initial options
+
+          //availableCountries: ko.observableArray(['France', 'Germany', 'Spain']),
+          availableCountries: ['France', 'Germany', 'Spain'],
+          selectedCountry : ko.observable("1")
+      };
+
+      // ... then later ...
+      ko.applyBindings(viewModel);
+      viewModel.availableCountries.push('China'); // Adds another option
+
+  </script>
+
+  <!-- <script type="text/javascript">
+      // Constructor for an object with two properties
+      var Country = function(name, population) {
+          this.countryName = name;
+          this.countryPopulation = population;
+      };
+
+      var viewModel = {
+          availableCountries : ko.observableArray([
+              new Country("UK", 65000000),
+              new Country("USA", 320000000),
+              new Country("Sweden", 29000000)
+          ]),
+          selectedCountry : ko.observable() // Nothing selected by default
+      };
+      ko.applyBindings(viewModel);
+  </script> -->
+
+  <script src="node_modules/jquery/dist/jquery.min.js"></script>
+
+  <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script>
+
+  </script>
+  <script src="http://maps.google.cn/maps/api/js?region=cn&language=zh-CN&key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places&callback=initMap"
+    async defer></script>
+  <!-- <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places" async defer></script> -->
+</body>
+</html>

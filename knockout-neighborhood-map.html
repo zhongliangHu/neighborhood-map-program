@@ -30,33 +30,36 @@
   <p><strong>单击地图添加标记，点击按钮删除、隐藏或显示标记</strong></p>
 
   <div id = "view">
-  <h2>Your seat reservations</h2>
+  <h2>Your seat reservations (<span data-bind = "text:seats().length"></span>)</h2>
   <table>
       <thead><tr>
           <th>Passenger name</th><th>Meal</th><th>Surcharge</th><th></th>
       </tr></thead>
-      <!-- Todo: Generate table body -->
-      <tbody data-bind = "foreach:seats">
-        <tr>
-        <td><input data-bind="value:name" /></td>
-        <td data-bind="text:meal().mealName"></td>
-        <td data-bind="text:meal().price"></td>
-        </tr>
-    </tbody>
-    <!-- Todo: Generate another table body -->
+    <!-- Todo: Generate table body -->
+
+    <!-- <td><select data-bind="foreach:$root.availableMeals" >
+      <option data-bind="value:$root.meal,text:mealName"></option>
+    </select></td> -->
+
       <tbody data-bind = "foreach:seats">
           <tr>
           <td><input data-bind="value:name" /></td>
-          <!-- <td><select data-bind="options:$parent.availableMeals, value:mealName,optionsText:'mealName' "> </select></td> -->
-          <td><select data-bind="with:$parent.availableMeals">
-            <option data-bind="value:mealName,optionsText:'mealName'"></option>
-          </select></td>
+          <!-- <td><select data-bind="options:$root.availableMeals, optionsText:function(seatReservation){return 'mealName:'+seatReservation.mealName;}, value:meal"> </select></td> -->
+            <td><select data-bind="options:$root.availableMeals, optionsText:$root.computedMealName, value:meal"> </select></td>
+          <!--value:meal 依据options不同选择 可动态改变meal(),以此可获取对应相应价格 -->
+          <!--value:meal不是mealName,meal是observable是监控绑定的，会自动变更读取 ?? -->
           <td data-bind="text:formattedPrice()"></td>
+          <td ><a href="#" data-bind="click:$root.removeSeat ">Remove it</a></td>
           </tr>
       </tbody>
   </table>
-  <button data-bind="click:addNewseat">Reserve another seat</button>
+  <button data-bind="click:addNewseat, enable: seats().length < 6">Reserve another seat</button>
+  <h3 data-bind = "visible: totalSurcharge() > 0 ">
+    Total Surcharge：$<span data-bind = "text:totalSurcharge()"> </span>
+  </h3>
+  <!-- 为什么需要在函数后添加()？？？是不是因为text的原因??? 为什么optionsText不需要加()-->
   </div>
+
 
   <script src="node_modules/knockout/build/output/knockout-latest.js"></script>
   <script>
@@ -66,11 +69,12 @@
       self.name = name;
       self.meal = ko.observable(initialMeal);
       //返回price --将initialMeal对应的价格price设置在SeatReservation构造函数中, 使得其能在seats[]数组内在每组中都能到访问  --闭包
-      self.formattedPrice =function(){
+      self.formattedPrice = function(){
         var price = self.meal().price;
         return price ? "$"+price.toFixed(2) : "None";
-      }
-      self.formattedMealName = self.meal().mealName;
+      };
+      console.log(self.formattedPrice());
+      //self.formattedMealName = self.meal().mealName;
     }
 
     // Overall viewmodel for this screen, along with initial state
@@ -78,9 +82,9 @@
       var self = this;
     // Non-editable catalog data - would come from the server
       self.availableMeals = [
-          { mealName: "Standard (sandwich)", price:"$"+0 },
-          { mealName: "Premium (lobster)", price: "$"+34.95 },
-          { mealName: "Ultimate (whole zebra)", price: "$"+290 }
+          { mealName: "Standard (sandwich)", price:0 },
+          { mealName: "Premium (lobster)", price: 34.95 },
+          { mealName: "Ultimate (whole zebra)", price: 290 }
         ];
     // Editable data
       self.seats = ko.observableArray([
@@ -88,8 +92,28 @@
           new SeatReservation("Bert", self.availableMeals[0])
         ]);
       self.addNewseat = function (){
-          self.seats.push(new SeatReservation("",self.availableMeals[1]));
-        }
+        self.seats.push(new SeatReservation("",self.availableMeals[1]));
+      };
+      self.removeSeat = function(seatReservation){
+        self.seats.remove(seatReservation);
+      };  // 怎么去出除seats[]的？？
+
+      self.computedMealName =  function(seatReservationMeal){
+        return 'mealName:'+seatReservationMeal.mealName;
+      };
+       //seatReservation代表foreach循环时 对应的new出来的SeatReservation实例 ？
+      self.totalSurcharge = function(){
+        var total = 0;
+        self.seats().forEach(function(seatReservation){
+          total += seatReservation.meal().price;
+        });
+        return total;
+      };
+
+      // self.computedMealName = ko.computed(function(seatReservation){
+      //   return 'mealName:'+seatReservation.mealName;
+      // },seatReservation);
+      // --为什么不行？？ seatReservation传不进去？
     }
       ko.applyBindings(new ReservationsViewModel());
   </script>
