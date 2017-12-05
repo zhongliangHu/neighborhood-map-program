@@ -23,12 +23,12 @@
 <body>
   <div id = "map"></div>
   <div id = panel>
-    <input type="text" id = "autocomplete" placeholder="Enter a university" />
+    <input type="text" id = "autocomplete" placeholder="Enter a scenic spot" />
     <div id = "controls">
       <select id = "area">
-      <option value="hangzhou">hangzhou</option>
-      <option value="jinhua">jinhua</option>
-      <option value="shaoxing">绍兴</option>
+      <option value="all">全部</option>
+      <option value="jinhua">金华</option>
+      <option value="zhoushan">舟山</option>
       </select>
     </div>
     <input type="button" value="hidden markers" id="hidden">
@@ -71,7 +71,7 @@
     var map,
         markers=[],
         marker,
-        areaRestrict={'city':'hangzhou'},
+        areaRestrict={city:'hangzhou'},
         labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
         labelIndex = 0,
         infowindow,
@@ -79,48 +79,48 @@
         service,
         request;
 
-    var areas ={
-      'hangzhou':{
+    var area ={
+      hangzhou:{
         center :{lat: 30.274, lng: 120.155},
-        zoom:13
+        zoom:14
       },
-      'shaoxing':{
+      jinhua:{
         center :{lat: 29.995, lng: 120.587},
-        zoom:13
+        zoom:14
       },
-      'jinhua':{
+      shaoxing:{
         center :{lat: 29.079, lng: 119.648},
-        zoom:13
+        zoom:14
       },
-      'ningbo':{
+      ningbo:{
         center :{lat: 29.845, lng: 121.569},
-        zoom:13
+        zoom:14
       },
-      'jiaxing':{
+      jiaxing:{
         center :{lat: 30.723, lng: 120.784},
-        zoom:13
+        zoom:14
       },
-      'huzhou':{
+      huzhou:{
         center :{lat: 30.869, lng: 120.114},
-        zoom:13
+        zoom:14
       },
-      'zhoushan':{
+      zhoushan:{
         center :{lat: 29.965, lng: 122.234},
-        zoom:13
+        zoom:14
       },
-      'quzhou':{
+      quzhou:{
         center :{lat: 28.951, lng: 118.878},
-        zoom:13
+        zoom:14
       },
-      'lishui':{
+      lishui:{
         center :{lat: 28.449, lng: 119.932},
         zoom:14
       },
-      'taizhou':{
+      taizhou:{
         center :{lat: 28.632, lng: 121.426},
         zoom:14
       },
-      'wenzhou':{
+      wenzhou:{
         center :{lat: 27.970, lng: 120.712},
         zoom:14
       }
@@ -129,18 +129,18 @@
       centerlatLng = {lat: 30.27409727939915, lng: 120.15506744384766};
       map = new google.maps.Map(document.getElementById("map"),{     //注：用$("#map")会出错
         center: centerlatLng,
-        zoom:11
+        zoom:15
       });
       //设置信息窗口
       infowindow = new google.maps.InfoWindow();
       //创建autocomplete(inputHTML,request)
       autocomplete = new google.maps.places.Autocomplete(
         document.getElementById("autocomplete"),{
-          bounds:map.getBounds(),  //如何来限定 县市区域？？
-          //componentRestrictions: areaRestrict,
+          // bounds:google.maps.getBounds(),
+          componentRestrictions: areaRestrict,
           type:["university"]
         });
-      autocomplete.addListener("place_changed",onplaceChanged);
+      google.maps.event.addListener("autocomplete","place_changed",onplaceChanged););
       //添加dom事件监听--当选择一个区域后地图产生变化 调用setAutocompleteArea()
       document.getElementById("area").addEventListener("change",setAutocompleteArea);
 
@@ -152,15 +152,15 @@
           map.setZoom(15);
           testSearch();
         }else{
-          document.getElementById('autocomplete').placeholder = "Enter a university";
+          document.getElementById('autocomplete').placeholder = "Enter a scenic spot";
         }
       }
 
       function setAutocompleteArea(){
-        var area = document.getElementById("area").value;
-        //autocomplete.setComponentRestrictions({'city':area});  //area的值 ??
+        var area = document.getElementById("area");
+        autocomplete.setCompenentRestrictions({'city':area});  //area的值 ??
         map.setCenter(areas[area].center);
-        map.setZoom(areas[area].zoom);
+        map.setZoom(areas[area].center);
         clearResults();
         deleteMarkers();  //彻底删除markers
       }
@@ -191,7 +191,6 @@
             results.forEach(function(result,index,array){
 
                     createMarker(result);       //for循环内--闭包closures
-
             });
           }
         };
@@ -203,47 +202,37 @@
             placeId = result.place_id,
             placeName = result.name;
 
+        addMarkers(placeLoc,placeId,placeName);  //添加marker标记
+        //addMarkers() 添加 传递了position的标记,并将marker添加到markers[]数组中
+        function addMarkers(position,id,name){
           marker = new google.maps.Marker({       //添加var marker=后 变局部变量 私有化(外部函数无法访问)，可能会使marker的addListener()找不到marker
             map:map,
-            title:result.name,
+            title:name,
             place:{
-              location:result.geometry.location,
-              placeId:result.place_id
+              location:position,
+              placeId:id
             },
             // icon:icon,          //添加标记图像
             label: labels[labelIndex++ % labels.length],   //？是否 相当于 labelIndex=(labelIndex+1)%labels.length
             animation: google.maps.Animation.DROP
           });
           markers.push(marker);   //添加marker到数组markers[];
-
-        //showInfowindow
-        function showInfowindow(result){
-          var marker = this;
-          places.getDetails({placeId:result.place_id},function(place,status){
-            if(status!==google.maps.places.PlacesServiceStatus.OK){
-              return;
-            }
-            infoWindow.open(map,marker);
-            buildContent(place);
-          });
         }
-        function buildContent(place){
-          var content = "<div class='placeContent'><strong>"+placeName+"</strong><br>"+
-                         "<strong>Place ID：</strong>"+placeId+"<br>"+
-                         "<strong>Place Formatted Address：</strong>"+result.formatted_address+"<br>"+
-                         // "<strong>Place html.attributions：</strong>"+result.html.attributions+"<br>"+
-                         "<strong>Place opening_hours：</strong>"+result.opening_hours+"<br>"+
-                         "<strong>Place rating：</strong>"+result.rating+"<br>"+
-                         "<strong>Place vicinity：</strong>"+result.vicinity+"<br>"+
-                         "<strong>Place icon：</strong>"+result.icon+"<br>"+
-                         "</div>"
-          google.maps.event.addListener(marker,"click",function(event){    //点击marker显示信息
-            infowindow.setContent(content);
-            infowindow.open(map,this);     // this为当前点击的marker
-          });
-        }
-     }
-
+     //showInfowindow
+        var content = "<div class='placeContent'><strong>"+placeName+"</strong><br>"+
+                       "<strong>Place ID：</strong>"+placeId+"<br>"+
+                       "<strong>Place Formatted Address：</strong>"+result.formatted_address+"<br>"+
+                       // "<strong>Place html.attributions：</strong>"+result.html.attributions+"<br>"+
+                       "<strong>Place opening_hours：</strong>"+result.opening_hours+"<br>"+
+                       "<strong>Place rating：</strong>"+result.rating+"<br>"+
+                       "<strong>Place vicinity：</strong>"+result.vicinity+"<br>"+
+                       "<strong>Place icon：</strong>"+result.icon+"<br>"+
+                       "</div>"
+        google.maps.event.addListener(marker,"click",function(event){    //点击marker显示信息
+          infowindow.setContent(content);
+          infowindow.open(map,this);     // this为当前点击的marker
+        });
+      }
 
       //点击地图 创造标记create markers
       google.maps.event.addListener(map,"click",function(event){
