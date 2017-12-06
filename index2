@@ -26,9 +26,9 @@
     <input type="text" id = "autocomplete" placeholder="Enter a university" />
     <div id = "controls">
       <select id = "area">
-      <option value="杭州">杭州</option>
-      <option value="金华">金华</option>
-      <option value="绍兴">绍兴</option>
+      <option value="hangzhou">hangzhou</option>
+      <option value="jinhua">jinhua</option>
+      <option value="shaoxing">绍兴</option>
       </select>
     </div>
     <div id = "results">
@@ -81,47 +81,47 @@
         request;
 
     var areas ={
-      '杭州':{
+      'hangzhou':{
         center :{lat: 30.274, lng: 120.155},
         zoom:13
       },
-      '绍兴':{
+      'shaoxing':{
         center :{lat: 29.995, lng: 120.587},
         zoom:13
       },
-      '金华':{
+      'jinhua':{
         center :{lat: 29.079, lng: 119.648},
         zoom:13
       },
-      '宁波':{
+      'ningbo':{
         center :{lat: 29.845, lng: 121.569},
         zoom:13
       },
-      '嘉兴':{
+      'jiaxing':{
         center :{lat: 30.723, lng: 120.784},
         zoom:13
       },
-      '湖州':{
+      'huzhou':{
         center :{lat: 30.869, lng: 120.114},
         zoom:13
       },
-      '舟山':{
+      'zhoushan':{
         center :{lat: 29.965, lng: 122.234},
         zoom:13
       },
-      '衢州':{
+      'quzhou':{
         center :{lat: 28.951, lng: 118.878},
         zoom:13
       },
-      '丽水':{
+      'lishui':{
         center :{lat: 28.449, lng: 119.932},
         zoom:14
       },
-      '台州':{
+      'taizhou':{
         center :{lat: 28.632, lng: 121.426},
         zoom:14
       },
-      '温州':{
+      'wenzhou':{
         center :{lat: 27.970, lng: 120.712},
         zoom:14
       }
@@ -160,12 +160,11 @@
       }
 
       function setAutocompleteArea(){
-        var areaValue = document.getElementById("area").value;
-        //alert(areaValue);
-        map.setCenter(areas[areaValue].center);
-        map.setZoom(areas[areaValue].zoom);
-        //alert(areas[areaValue].zoom);
-        //clearResults();
+        var area = document.getElementById("area").value;
+        //autocomplete.setComponentRestrictions({'city':area});  //area的值 ??
+        map.setCenter(areas[area].center);
+        map.setZoom(areas[area].zoom);
+        clearResults();
         deleteMarkers();  //彻底删除markers
       }
 
@@ -187,9 +186,8 @@
         //nearbySearch({},callback)中的callback()返回函数的设置,利用forEach()遍历results[]创建marker标记
         function callback(results,status){
           if (status === google.maps.places.PlacesServiceStatus.OK) {
-            //clearResults();
+            clearResults();
             deleteMarkers();
-
             results.forEach(function(result,index,array){
                     createMarker(result);       //for循环内--闭包closures
             });
@@ -280,86 +278,64 @@
       $("#hidden").on("click",function(){
         hiddenMarkers();
       });
-      // $("#delete").on("click",function(){
-      //   deleteMarkers();
-      // });
-    }
-    $("#delete").on("click",function(){
-      console.log(markers);
-    });
-    //viewModel Part --VM部分    //results-- vicinity place_id  name
+      $("#delete").on("click",function(){
+        deleteMarkers();
+      });
 
-    // var areasArr=[];
-    // for (var variable in areas) {
-    //   if (areas.hasOwnProperty(variable)) {
-    //     areasArr.push(variable);
-    //   };
-    // }
-
-    function AreasViewModel() {
-      var self = this;
-      var areasArr=[];
-      for (var variable in areas) {
-        if (areas.hasOwnProperty(variable)) {
-          areasArr.push(variable);
+      //viewModel Part --VM部分
+      function SeatReservation(name, initialMeal) {
+        var self = this;
+        self.name = name;
+        self.meal = ko.observable(initialMeal);
+        //返回price --将initialMeal对应的价格price设置在SeatReservation构造函数中, 使得其能在seats[]数组内在每组中都能到访问  --闭包
+        self.formattedPrice = function(){
+          var price = self.meal().price;
+          return price ? "$"+price.toFixed(2) : "None";
         };
+        console.log(self.formattedPrice());
+        //self.formattedMealName = self.meal().mealName;
       }
-      alert(areasArr);
-      alert(areas);
-      //将areas{}中的name 组合为areasArr[]数组
 
-      self.availableAreas = ko.observable(areasArr);
+      // Overall viewmodel for this screen, along with initial state
+      function ReservationsViewModel() {
+        var self = this;
+      // Non-editable catalog data - would come from the server
+        self.availableMeals = [
+            { mealName: "Standard (sandwich)", price:0 },
+            { mealName: "Premium (lobster)", price: 34.95 },
+            { mealName: "Ultimate (whole zebra)", price: 290 }
+          ];
+      // Editable data
+        self.seats = ko.observableArray([
+            new SeatReservation("Steve", self.availableMeals[0]),
+            new SeatReservation("Bert", self.availableMeals[0])
+          ]);
+        self.addNewseat = function (){
+          self.seats.push(new SeatReservation("",self.availableMeals[1]));
+        };
+        self.removeSeat = function(seatReservation){
+          self.seats.remove(seatReservation);
+        };  // 怎么去出除seats[]的？？
 
+        self.computedMealName =  function(seatReservationMeal){
+          return 'mealName:'+seatReservationMeal.mealName;
+        };
+         //seatReservation代表foreach循环时 对应的new出来的SeatReservation实例 ？
+        self.totalSurcharge = function(){
+          var total = 0;
+          self.seats().forEach(function(seatReservation){
+            total += seatReservation.meal().price;
+          });
+          return total;
+        };
+
+        // self.computedMealName = ko.computed(function(seatReservation){
+        //   return 'mealName:'+seatReservation.mealName;
+        // },seatReservation);
+        // --为什么不行？？ seatReservation传不进去？
+      }
+        ko.applyBindings(new ReservationsViewModel());
     }
-
-    ko.applyBindings(new AreasViewModel());
-    //
-    // function SeatReservation(name, initialMeal) {
-    //   var self = this;
-    //   self.name = name;
-    //   self.meal = ko.observable(initialMeal);
-    //   //返回price --将initialMeal对应的价格price设置在SeatReservation构造函数中, 使得其能在seats[]数组内在每组中都能到访问  --闭包
-    //   self.formattedPrice = function(){
-    //     var price = self.meal().price;
-    //     return price ? "$"+price.toFixed(2) : "None";
-    //   };
-    //   console.log(self.formattedPrice());
-    //   //self.formattedMealName = self.meal().mealName;
-    // }
-    //
-    // // Overall viewmodel for this screen, along with initial state
-    // function AreasViewModel() {
-    //   var self = this;
-    // // Non-editable catalog data - would come from the server
-    //    self.availableMeals = [
-    //     { mealName: "Standard (sandwich)", price:0 },
-    //     { mealName: "Premium (lobster)", price: 34.95 },
-    //     { mealName: "Ultimate (whole zebra)", price: 290 }
-    //   ];
-    // // Editable data
-    //   self.seats = ko.observableArray([
-    //       new SeatReservation("Steve", self.availableMeals[0]),
-    //       new SeatReservation("Bert", self.availableMeals[0])
-    //     ]);
-    //   self.addNewseat = function (){
-    //     self.seats.push(new SeatReservation("",self.availableMeals[1]));
-    //   };
-    //   self.removeSeat = function(seatReservation){
-    //     self.seats.remove(seatReservation);
-    //   };  // 怎么去出除seats[]的？？
-    //
-    //   self.computedMealName =  function(seatReservationMeal){
-    //     return 'mealName:'+seatReservationMeal.mealName;
-    //   };
-    //    //seatReservation代表foreach循环时 对应的new出来的SeatReservation实例 ？
-    //   self.totalSurcharge = function(){
-    //     var total = 0;
-    //     self.seats().forEach(function(seatReservation){
-    //       total += seatReservation.meal().price;
-    //     });
-    //     return total;
-    //   };
-    // }
 
   </script>
   <script src="http://maps.google.cn/maps/api/js?region=cn&language=zh-CN&key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places&callback=initMap"
