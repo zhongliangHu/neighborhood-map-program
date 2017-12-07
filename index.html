@@ -117,26 +117,6 @@
       }
     };
 
-        function AreasViewModel() {
-          var self = this;
-          var areasArr=[];
-
-          //将areas{}中的name 组合为areasArr[]数组
-          for (var variable in areas) {
-            if (areas.hasOwnProperty(variable)) {
-              areasArr.push(variable);
-            };
-          };
-
-          self.availableAreas = ko.observableArray(areasArr);
-          self.availableMarkers = ko.observableArray(markers);
-          console.log(markers);  //marker[].placeResult.name/rating/vicinity
-          self.selectedArea = ko.observable();  //将自动搜索input框与select框绑定
-          self.removeMarker = function(marker){
-              self.availableMarkers.remove(marker);
-              //marker.setMap(null);
-          };  // 怎么去出除availableMarkers[]的-- http://knockoutjs.com/documentation/observableArrays.html
-        }
 
 
 
@@ -301,14 +281,38 @@
       // $("#delete").on("click",function(){
       //   deleteMarkers();
       // });
-    }
-    $("#delete").on("click",function(){
+
+      function AreasViewModel() {
+        var self = this;
+        var areasArr=[];
+
+        //将areas{}中的name 组合为areasArr[]数组
+        for (var variable in areas) {
+          if (areas.hasOwnProperty(variable)) {
+            areasArr.push(variable);
+          };
+        };
+
+        self.availableAreas = ko.observableArray(areasArr);
+        self.availableMarkers = ko.observableArray(markers);
+        console.log(markers);  //marker[].placeResult.name/rating/vicinity
+        self.selectedArea = ko.observable();  //将自动搜索input框与select框绑定
+        self.removeMarker = function(marker){
+            self.availableMarkers.remove(marker);
+            //marker.setMap(null);
+        };  // 怎么去出除availableMarkers[]的-- http://knockoutjs.com/documentation/observableArrays.html
+      }
       console.log(markers);
-    });
+      ko.applyBindings(new AreasViewModel());
+
+        $("#delete").on("click",function(){
+          console.log(markers);
+        });
+
+    }
+
 
     //viewModel Part --VM部分    //results-- vicinity place_id  name
-    console.log(markers);
-      ko.applyBindings(new AreasViewModel());
 
 
     // function SeatReservation(name, initialMeal) {
