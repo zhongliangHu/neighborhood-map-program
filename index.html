@@ -23,44 +23,34 @@
 <body>
   <div id = "map"></div>
   <div id = panel>
-    <input type="text" id = "autocomplete" placeholder="Enter a university" />
-    <div id = "controls">
-      <select id = "area">
-      <option value="杭州">杭州</option>
-      <option value="金华">金华</option>
-      <option value="绍兴">绍兴</option>
-      </select>
+    <div id = "controls">  <!-- optionsText:function(){return selectedArea() ? selectedArea:optionsValue();}, -->
+      <input type="text" id = "autocomplete" data-bind="value:selectedArea" placeholder="点击自动搜索" />
+      <select id = "area" data-bind="options:availableAreas,
+                                     value:selectedArea,
+                                     optionsCaption:'选择城市'"></select>
     </div>
-    <div id = "results">
+    <div id = "">
     <input type="button" value="hidden markers" id="hidden">
     <input type="button" value="show markers" id="show">
     <input type="button" value="delete markers" id="delete">
     </div>
   </div>
-
-  <div id = "view">
-  <h2>Your seat reservations (<span data-bind = "text:seats().length"></span>)</h2>
+  <div id = "view" class = "results" data-bind="visible: availableMarkers().length > 0 ">
+  <h2>高等学校机构名单表(共有<span data-bind = "text:availableMarkers().length"></span>所)</h2>
   <table>
       <thead><tr>
-          <th>Passenger name</th><th>Meal</th><th>Surcharge</th><th></th>
+          <th>学校名称</th><th>地址</th><th>地点总评分</th><th></th>
       </tr></thead>
     <!-- Todo: Generate table body -->
-      <tbody data-bind = "foreach:seats">
+      <tbody data-bind = "foreach:availableMarkers">
           <tr>
-          <td><input data-bind="value:name" /></td>
-          <!-- <td><select data-bind="options:$root.availableMeals, optionsText:function(seatReservation){return 'mealName:'+seatReservation.mealName;}, value:meal"> </select></td> -->
-            <td><select data-bind="options:$root.availableMeals, optionsText:$root.computedMealName, value:meal"> </select></td>
-          <!--value:meal 依据options不同选择 可动态改变meal(),以此可获取对应相应价格 -->
-          <td data-bind="text:formattedPrice()"></td>
+          <td data-bind="text:placeResult.name" ></td>
+          <td data-bind="text:placeResult.vicinity"></td>
+          <td data-bind="text:placeResult.rating"></td>
           <td ><a href="#" data-bind="click:$root.removeSeat ">Remove it</a></td>
           </tr>
       </tbody>
     </table>
-    <button data-bind="click:addNewseat, enable: seats().length < 6">Reserve another seat</button>
-    <h3 data-bind = "visible: totalSurcharge() > 0 ">
-      Total Surcharge：$<span data-bind = "text:totalSurcharge()"> </span>
-    </h3>
-    <!-- 为什么需要在函数后添加()？？？是不是因为text的原因??? 为什么optionsText不需要加()-->
   </div>
   <p><strong>单击地图添加标记，点击按钮删除、隐藏或显示标记</strong></p>
 
@@ -83,49 +73,73 @@
     var areas ={
       '杭州':{
         center :{lat: 30.274, lng: 120.155},
-        zoom:13
+        zoom:12
       },
       '绍兴':{
         center :{lat: 29.995, lng: 120.587},
-        zoom:13
+        zoom:12
       },
       '金华':{
         center :{lat: 29.079, lng: 119.648},
-        zoom:13
+        zoom:12
       },
       '宁波':{
         center :{lat: 29.845, lng: 121.569},
-        zoom:13
+        zoom:12
       },
       '嘉兴':{
         center :{lat: 30.723, lng: 120.784},
-        zoom:13
+        zoom:12
       },
       '湖州':{
         center :{lat: 30.869, lng: 120.114},
-        zoom:13
+        zoom:12
       },
       '舟山':{
         center :{lat: 29.965, lng: 122.234},
-        zoom:13
+        zoom:12
       },
       '衢州':{
         center :{lat: 28.951, lng: 118.878},
-        zoom:13
+        zoom:12
       },
       '丽水':{
         center :{lat: 28.449, lng: 119.932},
-        zoom:14
+        zoom:12
       },
       '台州':{
         center :{lat: 28.632, lng: 121.426},
-        zoom:14
+        zoom:12
       },
       '温州':{
         center :{lat: 27.970, lng: 120.712},
-        zoom:14
+        zoom:12
       }
     };
+
+        function AreasViewModel() {
+          var self = this;
+          var areasArr=[];
+
+          //将areas{}中的name 组合为areasArr[]数组
+          for (var variable in areas) {
+            if (areas.hasOwnProperty(variable)) {
+              areasArr.push(variable);
+            };
+          };
+
+          self.availableAreas = ko.observableArray(areasArr);
+          self.availableMarkers = ko.observableArray(markers);
+          console.log(markers);  //marker[].placeResult.name/rating/vicinity
+          self.selectedArea = ko.observable();  //将自动搜索input框与select框绑定
+          self.removeMarker = function(marker){
+              self.availableMarkers.remove(marker);
+              //marker.setMap(null);
+          };  // 怎么去出除availableMarkers[]的-- http://knockoutjs.com/documentation/observableArrays.html
+        }
+
+
+
     function initMap(){
       centerlatLng = {lat: 30.27409727939915, lng: 120.15506744384766};
       map = new google.maps.Map(document.getElementById("map"),{     //注：用$("#map")会出错
@@ -152,10 +166,11 @@
         var place = autocomplete.getPlace();
         if(place.geometry){
           map.panTo(place.geometry.location);
-          map.setZoom(15);
+          map.setZoom(12);
           Search();
+          //ko.applyBindings(new AreasViewModel());
         }else{
-          document.getElementById('autocomplete').placeholder = "Enter a university";
+          document.getElementById('autocomplete').placeholder = "点击自动搜索";
         }
       }
 
@@ -192,6 +207,7 @@
 
             results.forEach(function(result,index,array){
                     createMarker(result);       //for循环内--闭包closures
+
             });
           }
         };
@@ -217,7 +233,9 @@
           marker.placeResult = result;   //将result赋值给marker.placeResult属性 以便单击marker时调用
           marker.addListener("click", showInfowindow);   //点击marker显示信息
           markers.push(marker);   //添加marker到数组markers[];
+          window.markers = markers;
       }
+
         //showInfowindow
       function showInfowindow(){
         var marker = this,         // this为当前点击的marker placeId:result.place_id
@@ -287,33 +305,12 @@
     $("#delete").on("click",function(){
       console.log(markers);
     });
+
     //viewModel Part --VM部分    //results-- vicinity place_id  name
+    console.log(markers);
+      ko.applyBindings(new AreasViewModel());
 
-    // var areasArr=[];
-    // for (var variable in areas) {
-    //   if (areas.hasOwnProperty(variable)) {
-    //     areasArr.push(variable);
-    //   };
-    // }
 
-    function AreasViewModel() {
-      var self = this;
-      var areasArr=[];
-      for (var variable in areas) {
-        if (areas.hasOwnProperty(variable)) {
-          areasArr.push(variable);
-        };
-      }
-      alert(areasArr);
-      alert(areas);
-      //将areas{}中的name 组合为areasArr[]数组
-
-      self.availableAreas = ko.observable(areasArr);
-
-    }
-
-    ko.applyBindings(new AreasViewModel());
-    //
     // function SeatReservation(name, initialMeal) {
     //   var self = this;
     //   self.name = name;
@@ -344,9 +341,9 @@
     //   self.addNewseat = function (){
     //     self.seats.push(new SeatReservation("",self.availableMeals[1]));
     //   };
-    //   self.removeSeat = function(seatReservation){
-    //     self.seats.remove(seatReservation);
-    //   };  // 怎么去出除seats[]的？？
+      // self.removeSeat = function(seatReservation){
+      //   self.seats.remove(seatReservation);
+      // };  // 怎么去出除seats[]的？？
     //
     //   self.computedMealName =  function(seatReservationMeal){
     //     return 'mealName:'+seatReservationMeal.mealName;
