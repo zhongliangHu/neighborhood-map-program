@@ -15,7 +15,7 @@
     p{ color: green; font-size: 17px; position: absolute; margin: auto; top:auto; bottom:30px ; left: 10px; right: auto;;  }
     /* <p>固定在屏幕左下部分 */
 
-    #view{ padding: 5px;border-radius: 10px; opacity: 0.8; position: absolute; margin: auto; left: 20px; right:auto; top:55%; background: #f8f8f8;}
+    #view{ padding: 5px;border-radius: 10px; opacity: 0.8; position: absolute; margin: auto; left: 20px; right:auto; top:25%; background: #f8f8f8;}
     #controls{display: inline-block;}
   </style>
 </head>
@@ -23,8 +23,8 @@
 <body>
   <div id = "map"></div>
   <div id = panel>
-    <div id = "controls">  <!-- optionsText:function(){return selectedArea() ? selectedArea:optionsValue();}, -->
-      <input type="text" id = "autocomplete" data-bind="value:selectedArea" placeholder="点击自动搜索" />
+    <div id = "controls" data-bind = "">  <!-- optionsText:function(){return selectedArea() ? selectedArea:optionsValue();}, -->
+      <input type="text" id = "autocomplete" data-bind="value:selectedArea,valueUpdate:'input',click:function(){if(markers.length >1)addmarkers();}" placeholder="点击自动搜索" />
       <select id = "area" data-bind="options:availableAreas,
                                      value:selectedArea,
                                      optionsCaption:'选择城市'"></select>
@@ -47,7 +47,7 @@
           <td data-bind="text:placeResult.name" ></td>
           <td data-bind="text:placeResult.vicinity"></td>
           <td data-bind="text:placeResult.rating"></td>
-          <td ><a href="#" data-bind="click:$root.removeSeat ">Remove it</a></td>
+          <td ><a href="#" data-bind="click:$root.removeMarker ">Remove it</a></td>
           </tr>
       </tbody>
     </table>
@@ -222,7 +222,7 @@
             content;
         service.getDetails({placeId:marker.placeResult.place_id},function(place,status){
           if(status!==google.maps.places.PlacesServiceStatus.OK){
-            alert("回调出错,placeId: "+marker.placeResult.place_id);
+            alert("service.getDetails()回调出错,placeId: "+marker.placeResult.place_id);
             return;
           }
           //alert("回调正确");
@@ -294,15 +294,29 @@
         };
 
         self.availableAreas = ko.observableArray(areasArr);
-        self.availableMarkers = ko.observableArray(markers);
-        console.log(markers);  //marker[].placeResult.name/rating/vicinity
+        self.availableMarkers =  ko.observableArray(markers);
+        //console.log(markers);  //marker[].placeResult.name/rating/vicinity
         self.selectedArea = ko.observable();  //将自动搜索input框与select框绑定
         self.removeMarker = function(marker){
             self.availableMarkers.remove(marker);
-            //marker.setMap(null);
+            marker.setMap(null);
         };  // 怎么去出除availableMarkers[]的-- http://knockoutjs.com/documentation/observableArrays.html
+
+        //对availableMarkers()数组添加marker 设置1s时间差给 Autocomplete()返回完整markers[]数据
+        self.addmarkers = function(){
+          setTimeout(function(){
+              self.availableMarkers([]);
+              markers.forEach(function(marker){
+                self.availableMarkers.push(marker);
+              });
+              console.log(markers);
+            },2000);
+        };
+
+        self.selectedArea.subscribe(self.addmarkers);  //selectedArea 改变返回新的markers[]
+
       }
-      console.log(markers);
+      //console.log(markers);
       ko.applyBindings(new AreasViewModel());
 
         $("#delete").on("click",function(){
