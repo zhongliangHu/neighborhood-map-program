@@ -23,30 +23,25 @@
 <body>
   <div id = "map"></div>
   <div id = panel>
-    <div id = "controls" data-bind = "">  <!-- optionsText:function(){return selectedArea() ? selectedArea:optionsValue();}, -->
-      <input type="text" id = "autocomplete" data-bind="value:selectedArea,valueUpdate:'input',click:function(){if(markers.length >1)addmarkers();}" placeholder="点击自动搜索" />
+    <div id = "controls" data-bind = "">  <!--value:selectedArea, optionsText:function(){return selectedArea() ? selectedArea:optionsValue();}, event:{place_changed:addmarkers},click:function(){if(markers.length >1)addmarkers();}-->
+      <input type="text" id = "autocomplete" data-bind="value:selectedArea" placeholder="点击自动搜索" />
       <select id = "area" data-bind="options:availableAreas,
-                                     value:selectedArea,
                                      optionsCaption:'选择城市'"></select>
     </div>
-    <div id = "">
-    <input type="button" value="hidden markers" id="hidden">
-    <input type="button" value="show markers" id="show">
-    <input type="button" value="delete markers" id="delete">
-    </div>
+
   </div>
   <div id = "view" class = "results" data-bind="visible: availableMarkers().length > 0 ">
-  <h2>高等学校机构名单表(共有<span data-bind = "text:availableMarkers().length"></span>所)</h2>
+  <h2>高等学校机构名单表(共<span data-bind = "text:availableMarkers().length"></span>所)</h2>
   <table>
       <thead><tr>
-          <th>学校名称</th><th>地址</th><th>地点总评分</th><th></th>
+          <th>学校名称</th><th>地址</th><th>序号</th><th></th>
       </tr></thead>
     <!-- Todo: Generate table body -->
       <tbody data-bind = "foreach:availableMarkers">
           <tr>
           <td data-bind="text:placeResult.name" ></td>
           <td data-bind="text:placeResult.vicinity"></td>
-          <td data-bind="text:placeResult.rating"></td>
+          <td data-bind="text:label"></td>
           <td ><a href="#" data-bind="click:$root.removeMarker ">Remove it</a></td>
           </tr>
       </tbody>
@@ -71,47 +66,47 @@
         request;
 
     var areas ={
-      '杭州':{
+      '杭州市':{
         center :{lat: 30.274, lng: 120.155},
         zoom:12
       },
-      '绍兴':{
+      '绍兴市':{
         center :{lat: 29.995, lng: 120.587},
         zoom:12
       },
-      '金华':{
+      '金华市':{
         center :{lat: 29.079, lng: 119.648},
         zoom:12
       },
-      '宁波':{
+      '宁波市':{
         center :{lat: 29.845, lng: 121.569},
         zoom:12
       },
-      '嘉兴':{
+      '嘉兴市':{
         center :{lat: 30.723, lng: 120.784},
         zoom:12
       },
-      '湖州':{
+      '湖州市':{
         center :{lat: 30.869, lng: 120.114},
         zoom:12
       },
-      '舟山':{
+      '舟山市':{
         center :{lat: 29.965, lng: 122.234},
         zoom:12
       },
-      '衢州':{
+      '衢州市':{
         center :{lat: 28.951, lng: 118.878},
         zoom:12
       },
-      '丽水':{
+      '丽水市':{
         center :{lat: 28.449, lng: 119.932},
         zoom:12
       },
-      '台州':{
+      '台州市':{
         center :{lat: 28.632, lng: 121.426},
         zoom:12
       },
-      '温州':{
+      '温州市':{
         center :{lat: 27.970, lng: 120.712},
         zoom:12
       }
@@ -135,22 +130,34 @@
         document.getElementById("autocomplete"),{
           bounds:map.getBounds(),  //如何来限定 县市区域？？
           componentRestrictions: {'country':'chn'},
-          types:['(cities)']    //university  zoo hospital
+          types:['(cities)']    //(regions) (cities)
         });
+      //window.autocomplete=autocomplete;
       autocomplete.addListener("place_changed",onplaceChanged);
       //添加dom事件监听--当选择一个区域后地图产生变化 调用setAutocompleteArea()
       document.getElementById("area").addEventListener("change",setAutocompleteArea);
 
-      //当自动搜索框 发生地点改变事件时 调用onplaceChanged() 进行附近搜素
+      //当自动搜索框 发生地点改变事件时 调用onplaceChanged() 进行附近搜素search()
       function onplaceChanged(){
         var place = autocomplete.getPlace();
+        //将map指向自动输入的地点place
         if(place.geometry){
           map.panTo(place.geometry.location);
           map.setZoom(12);
           Search();
-          //ko.applyBindings(new AreasViewModel());
         }else{
           document.getElementById('autocomplete').placeholder = "点击自动搜索";
+        }
+
+       //每次自动搜素后 --若搜索的城市不在areas城市选项内 则将第一个选项设置为搜索的城市并设为可见
+        for (var area in areas) {
+          if (area.toLowerCase().indexOf(place.name.toLowerCase()) >= 0){
+             //document.getElementById("area").value=place.name;
+              return;
+           }else{
+             document.getElementById("area").childNodes[0].innerHTML = place.name;
+             document.getElementById("area").childNodes[0].selected = true;
+           };
         }
       }
 
@@ -162,6 +169,7 @@
         //alert(areas[areaValue].zoom);
         //clearResults();
         deleteMarkers();  //彻底删除markers
+        document.getElementById('autocomplete').value = areaValue;  //和输入框对应
       }
 
       //清除搜索结果
@@ -210,8 +218,10 @@
             label: labels[labelIndex++ % labels.length],   //？是否 相当于 labelIndex=(labelIndex+1)%labels.length
             animation: google.maps.Animation.DROP
           });
+
           marker.placeResult = result;   //将result赋值给marker.placeResult属性 以便单击marker时调用
           marker.addListener("click", showInfowindow);   //点击marker显示信息
+
           markers.push(marker);   //添加marker到数组markers[];
           window.markers = markers;
       }
@@ -229,12 +239,7 @@
           content = "<div class='placeContent'><strong>"+place.name+"</strong><br>"+
                              "<strong>Place ID：</strong>"+place.place_id+"<br>"+
                              "<strong>Place Formatted Address：</strong>"+place.formatted_address+"<br>"+
-                             "<strong>Place html.attributions：</strong>"+place.html_attributions+"<br>"+
-                             "<strong>Place opening_hours：</strong>"+place.opening_hours+"<br>"+
                              "<strong>Place rating：</strong>"+place.rating+"<br>"+
-                             "<strong>Place vicinity：</strong>"+place.vicinity+"<br>"+
-                             "<strong>Place icon：</strong>"+place.icon+"<br>"+
-                             "<strong>Place reviews：</strong>"+place.reviews+"<br>"+
                              "</div>";
 
             infowindow.setContent(content);
@@ -272,15 +277,7 @@
         markers = [];
       }
 
-      $("#show").on("click",function(){
-        showMarkers();
-      });
-      $("#hidden").on("click",function(){
-        hiddenMarkers();
-      });
-      // $("#delete").on("click",function(){
-      //   deleteMarkers();
-      // });
+      //viewModel Part --VM部分    //results-- vicinity place_id  name
 
       function AreasViewModel() {
         var self = this;
@@ -302,7 +299,7 @@
             marker.setMap(null);
         };  // 怎么去出除availableMarkers[]的-- http://knockoutjs.com/documentation/observableArrays.html
 
-        //对availableMarkers()数组添加marker 设置1s时间差给 Autocomplete()返回完整markers[]数据
+        //对availableMarkers()数组添加marker 设置1s时间差给 Autocomplete(,)返回完整markers[]数据
         self.addmarkers = function(){
           setTimeout(function(){
               self.availableMarkers([]);
@@ -310,71 +307,15 @@
                 self.availableMarkers.push(marker);
               });
               console.log(markers);
-            },2000);
+            },1000);
         };
 
-        self.selectedArea.subscribe(self.addmarkers);  //selectedArea 改变返回新的markers[]
+        autocomplete.addListener("place_changed",self.addmarkers); //当自动搜索框地址改变时 调用(toggle)addmarkers()
+      //  self.selectedArea.subscribe(self.addmarkers);  //selectedArea 改变返回新的markers[]--？？有bug,为什么autocomplete框内 点击得到自动搜索结果后 value:selectedArea没改变？？
 
       }
-      //console.log(markers);
       ko.applyBindings(new AreasViewModel());
-
-        $("#delete").on("click",function(){
-          console.log(markers);
-        });
-
-    }
-
-
-    //viewModel Part --VM部分    //results-- vicinity place_id  name
-
-
-    // function SeatReservation(name, initialMeal) {
-    //   var self = this;
-    //   self.name = name;
-    //   self.meal = ko.observable(initialMeal);
-    //   //返回price --将initialMeal对应的价格price设置在SeatReservation构造函数中, 使得其能在seats[]数组内在每组中都能到访问  --闭包
-    //   self.formattedPrice = function(){
-    //     var price = self.meal().price;
-    //     return price ? "$"+price.toFixed(2) : "None";
-    //   };
-    //   console.log(self.formattedPrice());
-    //   //self.formattedMealName = self.meal().mealName;
-    // }
-    //
-    // // Overall viewmodel for this screen, along with initial state
-    // function AreasViewModel() {
-    //   var self = this;
-    // // Non-editable catalog data - would come from the server
-    //    self.availableMeals = [
-    //     { mealName: "Standard (sandwich)", price:0 },
-    //     { mealName: "Premium (lobster)", price: 34.95 },
-    //     { mealName: "Ultimate (whole zebra)", price: 290 }
-    //   ];
-    // // Editable data
-    //   self.seats = ko.observableArray([
-    //       new SeatReservation("Steve", self.availableMeals[0]),
-    //       new SeatReservation("Bert", self.availableMeals[0])
-    //     ]);
-    //   self.addNewseat = function (){
-    //     self.seats.push(new SeatReservation("",self.availableMeals[1]));
-    //   };
-      // self.removeSeat = function(seatReservation){
-      //   self.seats.remove(seatReservation);
-      // };  // 怎么去出除seats[]的？？
-    //
-    //   self.computedMealName =  function(seatReservationMeal){
-    //     return 'mealName:'+seatReservationMeal.mealName;
-    //   };
-    //    //seatReservation代表foreach循环时 对应的new出来的SeatReservation实例 ？
-    //   self.totalSurcharge = function(){
-    //     var total = 0;
-    //     self.seats().forEach(function(seatReservation){
-    //       total += seatReservation.meal().price;
-    //     });
-    //     return total;
-    //   };
-    // }
+   }
 
   </script>
   <script src="http://maps.google.cn/maps/api/js?region=cn&language=zh-CN&key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places&callback=initMap"
