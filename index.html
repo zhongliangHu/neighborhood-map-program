@@ -31,7 +31,7 @@
 
   </div>
   <div id = "view" class = "results" data-bind="visible: availableMarkers().length > 0 ">
-  <h2>高等学校机构名单表(共<span data-bind = "text:availableMarkers().length"></span>所)</h2>
+  <h2>高等学校机构名单表(共<span data-bind = "text:availableMarkers().length"></span>处)</h2>
   <table>
       <thead><tr>
           <th>学校名称</th><th>地址</th><th>序号</th><th></th>
@@ -111,10 +111,6 @@
         zoom:12
       }
     };
-    //加载超时检测
-    var mapTimeout = setTimeout(function(){
-    	model.tips("谷歌地图加载超时...");
-    },6000);
 
     //initMap()
     function initMap(){
@@ -150,8 +146,7 @@
         }else{
           document.getElementById('autocomplete').placeholder = "点击自动搜索";
         }
-
-       //每次自动搜素后 --若搜索的城市不在areas城市选项内 则将第一个选项设置为搜索的城市并设为可见
+        //每次自动搜素后 --若搜索的城市不在areas城市选项内 则将第一个选项设置为搜索的城市并设为可见
         for (var area in areas) {
           if (area.toLowerCase().indexOf(place.name.toLowerCase()) >= 0){
              //document.getElementById("area").value=place.name;
@@ -219,18 +214,50 @@
       function showInfowindow(){
         var marker = this,         // this为当前点击的marker placeId:result.place_id
             content;
+        //从foursquare 第三方API获取marker的照片 并将其添加到infoWindow信息栏中
+        var markerUrl = "https://api.foursquare.com/v2/venues/" + marker.placeResult.place_id + "/photos" ;
+        $.ajax({
+              type: "GET",
+              url: markerUrl,
+              dataType:"json"
+        }).done(function (resultData){
+                  if (resultData["response"]) {
+                    var response = resultData["response"],
+                        photos = response["photos"],
+                        items = photos["items"][0],
+                        imgPrefix = items["prefix"],
+                        imgSuffix = items["suffix"],
+                        imgWidth = items["width"],
+                        imgHeight = items["height"],
+                        imgSrc = imgPrefix + imgWidth +"x"+imgHeight+imgSuffix;
+                    content = "<div class='photo'><img src ='"+imgSrc+"' alt='照片' />"+ "</div>";
+                  }
+              })
+            .fail(function(){
+              alert("调取照片失败...");
+            })
+            .always(function(){
+              console.log("调取照片成功!");
+            });
+
+         //通过places库 获取marker的主要信息 并将其添加到infoWindow信息栏中
         service.getDetails({placeId:marker.placeResult.place_id},function(place,status){
           if(status!==google.maps.places.PlacesServiceStatus.OK){
             alert("service.getDetails()回调出错,placeId: "+marker.placeResult.place_id);
             return;
           }
           //alert("回调正确");
-          content = "<div class='placeContent'><strong>"+place.name+"</strong><br>"+
+          content += "<div class='placeContent'><strong>"+place.name+"</strong><br>"+
                              "<strong>Place ID：</strong>"+place.place_id+"<br>"+
                              "<strong>Place Formatted Address：</strong>"+place.formatted_address+"<br>"+
                              "<strong>Place rating：</strong>"+place.rating+"<br>"+
                              "</div>";
 
+             //点击跳动marker
+            marker.setAnimation(google.maps.Animation.BOUNCE);
+            window.setTimeout(function(){
+              marker.setAnimation(null);
+            },1000);
             infowindow.setContent(content);
             infowindow.open(map,marker);
         });
@@ -265,6 +292,8 @@
         hiddenMarkers();
         markers = [];
       }
+
+
 
       //viewModel Part ----VM部分
 
@@ -305,9 +334,15 @@
       ko.applyBindings(new AreasViewModel());
    }
 
+   //加载超时...
+   var mapError = function(){
+      setTimeout(function(){
+        alert("谷歌地图加载超时...");
+      },3000);
+   }
   </script>
   <script src="http://maps.google.cn/maps/api/js?region=cn&language=zh-CN&key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places&callback=initMap"
-    async defer></script>
+    onerror="mapError()" async defer></script>
   <!-- <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places" async defer></script> -->
 </body>
 </html>
