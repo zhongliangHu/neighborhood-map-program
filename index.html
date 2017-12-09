@@ -111,10 +111,12 @@
         zoom:12
       }
     };
+    //加载超时检测
+    var mapTimeout = setTimeout(function(){
+    	model.tips("谷歌地图加载超时...");
+    },6000);
 
-
-
-
+    //initMap()
     function initMap(){
       centerlatLng = {lat: 30.27409727939915, lng: 120.15506744384766};
       map = new google.maps.Map(document.getElementById("map"),{     //注：用$("#map")会出错
@@ -128,7 +130,7 @@
       //创建autocomplete(inputHTML,request)
       autocomplete = new google.maps.places.Autocomplete(
         document.getElementById("autocomplete"),{
-          bounds:map.getBounds(),  //如何来限定 县市区域？？
+          bounds:map.getBounds(),  //限定搜索区域
           componentRestrictions: {'country':'chn'},
           types:['(cities)']    //(regions) (cities)
         });
@@ -163,22 +165,11 @@
 
       function setAutocompleteArea(){
         var areaValue = document.getElementById("area").value;
-        //alert(areaValue);
         map.setCenter(areas[areaValue].center);
         map.setZoom(areas[areaValue].zoom);
-        //alert(areas[areaValue].zoom);
-        //clearResults();
         deleteMarkers();  //彻底删除markers
         document.getElementById('autocomplete').value = areaValue;  //和输入框对应
       }
-
-      //清除搜索结果
-      // function clearResults(){
-      //   var results = document.getElementById('results');
-      //   while (results.firstChild){
-      //     results.removeChild(results.firstChild);
-      //   };
-      // }
 
       //对城市city 进行附近搜索-大学
       function Search(){
@@ -190,9 +181,7 @@
         //nearbySearch({},callback)中的callback()返回函数的设置,利用forEach()遍历results[]创建marker标记
         function callback(results,status){
           if (status === google.maps.places.PlacesServiceStatus.OK) {
-            //clearResults();
             deleteMarkers();
-
             results.forEach(function(result,index,array){
                     createMarker(result);       //for循环内--闭包closures
 
@@ -277,7 +266,7 @@
         markers = [];
       }
 
-      //viewModel Part --VM部分    //results-- vicinity place_id  name
+      //viewModel Part ----VM部分
 
       function AreasViewModel() {
         var self = this;
@@ -292,8 +281,8 @@
 
         self.availableAreas = ko.observableArray(areasArr);
         self.availableMarkers =  ko.observableArray(markers);
-        //console.log(markers);  //marker[].placeResult.name/rating/vicinity
-        self.selectedArea = ko.observable();  //将自动搜索input框与select框绑定
+        self.selectedArea = ko.observable();
+        //点击remove it时，将地图上的marker及表格内marker移除
         self.removeMarker = function(marker){
             self.availableMarkers.remove(marker);
             marker.setMap(null);
@@ -311,8 +300,7 @@
         };
 
         autocomplete.addListener("place_changed",self.addmarkers); //当自动搜索框地址改变时 调用(toggle)addmarkers()
-      //  self.selectedArea.subscribe(self.addmarkers);  //selectedArea 改变返回新的markers[]--？？有bug,为什么autocomplete框内 点击得到自动搜索结果后 value:selectedArea没改变？？
-
+        //self.selectedArea.subscribe(self.addmarkers);  //selectedArea 改变返回新的markers[]--？？有bug,为什么autocomplete框内 点击得到自动搜索结果后 value:selectedArea没改变？？
       }
       ko.applyBindings(new AreasViewModel());
    }
