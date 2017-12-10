@@ -281,7 +281,7 @@
         console.log(this.placeResult.name);
       };
 
-      autocomplete.addListener("place_changed",self.addmarkers); //当自动搜索框地址改变时 调用(toggle)addmarkers()
+      autocomplete.addListener("place_changed",self.addmarkers); //当自动搜索框地址改变时 调用(toggle?trigger)addmarkers()
       //self.selectedArea.subscribe(self.addmarkers);  //selectedArea 改变返回新的markers[]--？？有bug,为什么autocomplete框内 点击得到自动搜索结果后 value:selectedArea没改变？？
     }
     ko.applyBindings(new AreasViewModel());

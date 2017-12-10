@@ -34,10 +34,6 @@
     /* <p>固定在屏幕左下部分 */
     p{ color: green; font-size: 20px; position: fixed; margin: auto; top:auto; bottom:20px ; left: 10px; right: auto;;  }
 
-
-
-
-
     @media screen and (max-width:560px){
       #panel {
         width: 200px;
@@ -75,7 +71,7 @@
             <td><a data-bind = "click:$root.selected" ><span data-bind="text:title"></span></a></td>
             <td class = "visible-lg" data-bind="text:placeResult.vicinity"></td>
             <td data-bind="text:label"></td>
-            <td ><a href="#" data-bind="click:$root.removeMarker ">Remove it</a></td>
+            <td ><a href="#" data-bind="click:$root.removeMarker">Remove it</a></td>
           </tr>
         </tbody>
       </table>
