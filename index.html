@@ -4,8 +4,7 @@
   <meta charset="utf-8">
   <title>街区地图</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css"></style>
-  <link rel="stylesheet" href=""></style>
+  <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
   <style>
     #map { height: 100%; position:fixed;}
     html,body{height: 100%; margin: 0; padding: 0; position:relative;}
@@ -56,8 +55,8 @@
       <input type="text" id = "autocomplete" data-bind="value:selectedArea" placeholder="点击自动搜索" />
       <select id = "area" data-bind="options:availableAreas,
                                      optionsCaption:'选择城市'"></select>
-
   </div>
+  
   <div id = "view" class = "results" data-bind="visible: availableMarkers().length > 0 ">
   <h3>高等学校机构名单表(共<span data-bind = "text:availableMarkers().length"></span>处)</h2>
     <div class="table-responsive" >
@@ -79,9 +78,9 @@
   </div>
   <p id="tips"><strong>搜索框内输入城市地名后，单击搜素框，选择详细地址，可查询该城市的高校机构情况</strong></p>
 
-  <script src="node_modules/jquery/dist/jquery.min.js"></script>
-  <script src="node_modules/knockout/build/output/knockout-latest.js"></script>
-  <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://cdn.bootcss.com/knockout/3.4.2/knockout-min.js"></script>
+  <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   <script src="js/app.js"></script>
   <script src="https://maps.googleapis.com/maps/api/js?&key=AIzaSyCa3svkvGg3-tyYrFyO-8Ilvu9Tce-IwQM&libraries=places&callback=initMap"
     onerror="mapError()" async defer></script>
