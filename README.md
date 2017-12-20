@@ -1,5 +1,7 @@
 ## 街区地图
 
+**online Version: https://zhonglianghu.github.io/neighborhood-map-program/**
+
 ### 使用指南
   1. 下载该项目所有文件，双击 `index.html` ,即可打开基于谷歌地图的街区地图项目-搜索各城市的高校。
   2. 该项目主要使用 **Google Maps API** 载入谷歌地图以实现各项功能。利用Google Maps API内的 **places库** 和 **搜索自动完成** 完成对国内各个城市的主要高校机构的搜索及返回相关信息(可单击标记查看相关信息, 也可查看名单中的主要信息)。
