@@ -1,6 +1,6 @@
 ## 街区地图
 
-**online Version: https://zhonglianghu.github.io/neighborhood-map-program/**
+**Online version: https://zhonglianghu.github.io/neighborhood-map-program/**
 
 ### 使用指南
   1. 下载该项目所有文件，双击 `index.html` ,即可打开基于谷歌地图的街区地图项目-搜索各城市的高校。
